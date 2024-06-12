@@ -41,6 +41,7 @@ const StatisticsTable: React.FC<Props> = ({ activities }) => {
     ],
     []
   );
+
   const counter = React.useMemo(() => {
     const counter: Record<string, number> = {};
     for (const activity of activities) {

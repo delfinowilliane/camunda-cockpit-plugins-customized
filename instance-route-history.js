@@ -69420,6 +69420,32 @@ var HistoryTable = function (_a) {
                 return React.createElement(Clippy, { value: value }, value);
             },
         },
+        {
+            Header: 'Download',
+            Cell: function (_a) {
+                var row = _a.row;
+                var handleDownload = function () { return __awaiter(void 0, void 0, void 0, function () {
+                    var processInstanceId, error_1;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                processInstanceId = row.values.id;
+                                return [4 /*yield*/, getDownloadS3Link(processInstanceId)];
+                            case 1:
+                                _a.sent();
+                                return [3 /*break*/, 3];
+                            case 2:
+                                error_1 = _a.sent();
+                                console.error('Error fetching download-s3 link:', error_1);
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); };
+                return (React.createElement("button", { onClick: handleDownload }, "Download ZIP"));
+            },
+        },
     ]; }, []);
     var data = React.useMemo(function () {
         return instances.map(function (instance) {
@@ -69432,6 +69458,79 @@ var HistoryTable = function (_a) {
             };
         });
     }, [instances]);
+    var getDownloadS3Link = function (processInstanceId) { return __awaiter(void 0, void 0, void 0, function () {
+        var response, data_1, downloadS3Link, link, response_1, variables, downloadS3Variable, downloadS3Link, link;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!processInstanceId) return [3 /*break*/, 8];
+                    return [4 /*yield*/, fetch("/engine-rest/process-instance/".concat(processInstanceId, "/variables/download-s3"), {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })];
+                case 1:
+                    response = _a.sent();
+                    if (!response.ok) return [3 /*break*/, 3];
+                    return [4 /*yield*/, response.json()];
+                case 2:
+                    data_1 = _a.sent();
+                    downloadS3Link = data_1.value;
+                    if (downloadS3Link) {
+                        link = document.createElement('a');
+                        link.href = downloadS3Link;
+                        link.setAttribute('download', '');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                    else {
+                        console.error('Failed to fetch download-s3 link');
+                    }
+                    return [3 /*break*/, 7];
+                case 3: return [4 /*yield*/, fetch("/engine-rest/history/variable-instance?processInstanceId=".concat(processInstanceId), {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })];
+                case 4:
+                    response_1 = _a.sent();
+                    if (!response_1.ok) return [3 /*break*/, 6];
+                    return [4 /*yield*/, response_1.json()];
+                case 5:
+                    variables = _a.sent();
+                    downloadS3Variable = variables.find(function (variable) { return variable.name === 'download-s3'; });
+                    if (downloadS3Variable) {
+                        downloadS3Link = downloadS3Variable.value;
+                        if (downloadS3Link) {
+                            link = document.createElement('a');
+                            link.href = downloadS3Link;
+                            link.setAttribute('download', '');
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                        else {
+                            console.error('Failed to fetch download-s3 link');
+                        }
+                    }
+                    else {
+                        console.error('download-s3 variable not found');
+                    }
+                    return [3 /*break*/, 7];
+                case 6:
+                    console.error('Error fetching variables:', response_1.status);
+                    _a.label = 7;
+                case 7: return [3 /*break*/, 9];
+                case 8:
+                    console.error('Process Instance ID is undefined');
+                    _a.label = 9;
+                case 9: return [2 /*return*/];
+            }
+        });
+    }); };
     var tableInstance = reactTableExports.useTable({ columns: columns, data: data }, reactTableExports.useSortBy);
     var getTableProps = tableInstance.getTableProps, getTableBodyProps = tableInstance.getTableBodyProps, headerGroups = tableInstance.headerGroups, rows = tableInstance.rows, prepareRow = tableInstance.prepareRow;
     return (React.createElement("table", __assign$1({ className: "cam-table" }, getTableProps()),

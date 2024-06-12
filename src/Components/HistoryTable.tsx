@@ -6,6 +6,7 @@ import { useSortBy, useTable } from 'react-table';
 
 import { Clippy } from './Clippy';
 
+
 interface Props {
   instances: any[];
 }
@@ -51,9 +52,29 @@ const HistoryTable: React.FC<Props> = ({ instances }) => {
         accessor: 'businessKey',
         Cell: ({ value }: any) => <Clippy value={value}>{value}</Clippy>,
       },
+      {
+        Header: 'Download',
+        Cell: ({ row }: any) => {
+          const handleDownload = async () => {
+            try {
+              const processInstanceId = row.values.id;
+              await getDownloadS3Link(processInstanceId);
+            } catch (error) {
+              console.error('Error fetching download-s3 link:', error);
+            }
+          };
+  
+          return (
+            <button onClick={handleDownload}>
+              Download ZIP
+            </button>
+          );
+        },
+      },
     ],
     []
   );
+
   const data = React.useMemo(
     () =>
       instances.map((instance: any) => {
@@ -67,6 +88,74 @@ const HistoryTable: React.FC<Props> = ({ instances }) => {
       }),
     [instances]
   );
+
+  const getDownloadS3Link = async (processInstanceId: string) => {
+    if (processInstanceId) {  
+      const response = await fetch(`/engine-rest/process-instance/${processInstanceId}/variables/download-s3`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        const downloadS3Link = data.value;
+  
+        if (downloadS3Link) {
+          // Abrir link para download
+          const link = document.createElement('a');
+          link.href = downloadS3Link;
+          link.setAttribute('download', '');
+  
+          document.body.appendChild(link);
+          link.click();
+  
+          document.body.removeChild(link);
+        } else {
+          console.error('Failed to fetch download-s3 link');
+        }
+      } else {
+        // Fetch variables for completed instances
+        const response = await fetch(`/engine-rest/history/variable-instance?processInstanceId=${processInstanceId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+  
+        if (response.ok) {
+          const variables = await response.json();
+          const downloadS3Variable = variables.find((variable: any) => variable.name === 'download-s3');
+  
+          if (downloadS3Variable) {
+            const downloadS3Link = downloadS3Variable.value;
+  
+            if (downloadS3Link) {
+              // Abrir link para download
+              const link = document.createElement('a');
+              link.href = downloadS3Link;
+              link.setAttribute('download', '');
+  
+              document.body.appendChild(link);
+              link.click();
+  
+              document.body.removeChild(link);
+            } else {
+              console.error('Failed to fetch download-s3 link');
+            }
+          } else {
+            console.error('download-s3 variable not found');
+          }
+        } else {
+          console.error('Error fetching variables:', response.status);
+        }
+      }
+    } else {
+      console.error('Process Instance ID is undefined');
+    }
+  };
+
   const tableInstance = useTable({ columns: columns as any, data }, useSortBy);
   const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = tableInstance;
   return (
